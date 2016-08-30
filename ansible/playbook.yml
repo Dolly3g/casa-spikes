@@ -1,0 +1,44 @@
+---
+- hosts: all
+  become: yes
+  tasks: 
+    - name: Create CASA directory
+      file: path=/usr/local/bin/CASA/ state=directory mode=0755
+
+    - name: Check if CASA is present
+      stat: path=/usr/local/bin/CASA/casa-stable-5.0.5
+      register: casa_dir
+
+    - name: Download CASA
+      get_url: url=https://svn.cv.nrao.edu/casa/linux_distro/stable/el6/casa-stable-5.0.5.tar.gz dest=/usr/local/bin/CASA/  force=no
+      when: not casa_dir.stat.exists
+
+    - name: Unarchive CASA package
+      shell: tar xvzf /usr/local/bin/CASA/casa-stable-5.0.5.tar.gz -C /usr/local/bin/CASA/
+      when: not casa_dir.stat.exists
+
+    - name: Install libselinux-python
+      yum: name=libselinux-python state=present
+
+    - name: export CASA path
+      blockinfile:
+        dest: "~/.bash_profile"
+        block: |
+          export PATH=$PATH:/usr/local/bin/CASA/casa-stable-5.0.5/bin
+
+    - name: Install CASA dependencies
+      yum: name="{{item}}" state=present
+      with_items:
+        - perl
+        - libSM
+        - libX11
+        - libXext
+        - freetype
+        - libXi
+        - libXrender
+        - libXrandr
+        - libXfixes
+        - libXcursor
+        - libXinerama
+        - fontconfig
+
